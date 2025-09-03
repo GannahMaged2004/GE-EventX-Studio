@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@plugin "flowbite-react/plugin/tailwindcss";
+@source "../.flowbite-react/class-list.json";
+
+
+
+body {
+  background: linear-gradient(135deg, #2b0a4e 0%, #4b0082 50%, #6a0dad 100%);
+  min-height: 100vh;
+  padding:50px;
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, #ff4cff, #8e2de2);
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gradient-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4);
+}
+
+
+.gradient-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4);
+}
+
+
+.btn-outline-info:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 1);
+}
+
+.btn-primary:hover {
+  background-color: #ff1fff;
+  border-color: #ff1fff;
+}
+
+
