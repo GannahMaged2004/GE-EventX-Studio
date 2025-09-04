@@ -1,3 +1,4 @@
+// This file contains the functions for user registration, login, and user profile.
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 

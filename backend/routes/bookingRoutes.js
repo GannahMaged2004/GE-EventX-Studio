@@ -1,3 +1,4 @@
+// Booking Routes
 import express from 'express';
 import { createBooking, getUserBookings, getAllBookings } from '../controllers/bookingController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';

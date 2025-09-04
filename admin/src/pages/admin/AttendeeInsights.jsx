@@ -1,104 +1,105 @@
+// AttendeeInsights.jsx
+import { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { Spinner } from "flowbite-react";
+import { getDemographics } from "../../api/api";
+import {
+  PieChart, Pie, Cell, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+} from "recharts";
+
+const COLORS = ["#8b5cf6","#7c3aed","#c084fc","#10b981","#f59e0b","#ef4444","#14b8a6","#f472b6","#22c55e","#0ea5e9"];
+
+const toPairs = (obj) => Object.entries(obj || {}).map(([name, value]) => ({ name, value }));
 
 export default function AttendeeInsights() {
-  // keep your sample data; you can replace with getDemographics() later
-  const ageData = [
-    { day: "01", "18-24": 12, "25-34": 20, "35-44": 8, "45+": 5 },
-    { day: "02", "18-24": 15, "25-34": 18, "35-44": 9, "45+": 7 },
-    { day: "03", "18-24": 11, "25-34": 14, "35-44": 10, "45+": 6 },
-    { day: "04", "18-24": 14, "25-34": 22, "35-44": 11, "45+": 8 },
-  ];
-  const interestData = [
-    { name: "Live Music", value: 35 },
-    { name: "Innovation", value: 50 },
-    { name: "EDM Music", value: 25 },
-    { name: "Food Festivals", value: 35 },
-  ];
-  const COLORS = ["#3B82F6","#F43F5E","#FACC15","#10B981"];
-  const locationData = [
-    { name: "Colombo", value: 227 },{ name: "Kandy", value: 123 },
-    { name: "Galle", value: 143 },{ name: "Jaffna", value: 70 },{ name: "International", value: 52 },
-  ];
+  const [data, setData] = useState({ ageDistribution:{}, genders:{}, interests:{}, locations:{} });
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const d = await getDemographics();
+        setData(d || {});
+      } catch (e) {
+        console.error(e);
+        setErr(e.message || "Failed to load demographics");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const ageData = toPairs(data.ageDistribution);
+  const genderData = toPairs(data.genders);
+  const locationData = toPairs(data.locations);
+  const interestsData = toPairs(data.interests)
+    .sort((a,b) => b.value - a.value)
+    .slice(0, 10);
 
   return (
-    <div className="flex bg-white rounded-xl shadow p-6 w-full">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 px-8">
-        {/* header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Attendee Insights – Colombo Music Festival 2025</h1>
-            <p className="text-gray-600">Event Venue: Viharamahadevi Open Air Theater, Colombo<br/>Event Date: April 12, 2025 – 6.00PM – 10.30PM</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <input type="text" placeholder="Search..." className="border rounded-lg px-3 py-2"/>
-            <button className="bg-gray-200 px-3 py-2 rounded-lg">Attendees: 523</button>
-            <button className="bg-gray-200 px-3 py-2 rounded-lg">Filter</button>
-          </div>
-        </div>
+      <main className="flex-1 p-6 space-y-6">
+        <h1 className="text-2xl font-bold">Attendee Insights</h1>
 
-        {/* Row 1 */}
-        <div className="grid grid-cols-3 gap-6 mb-6">
-          <div className="col-span-2 bg-white p-6 rounded-xl shadow">
-            <h2 className="font-semibold mb-4">Attendee Age</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ageData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" /><YAxis /><Tooltip /><Legend />
-                <Bar dataKey="18-24" fill="#3B82F6" />
-                <Bar dataKey="25-34" fill="#F43F5E" />
-                <Bar dataKey="35-44" fill="#FACC15" />
-                <Bar dataKey="45+" fill="#10B981" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {loading ? <div><div>Loading… 
+            <Spinner aria-label="Default status example"/>;
+          </div></div> : err ? <div className="text-red-600">{err}</div> : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Age Distribution */}
+            <div className="rounded-2xl shadow bg-white p-4">
+              <h3 className="mb-2 font-semibold">Age Distribution</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={ageData} dataKey="value" nameKey="name" outerRadius={90}>
+                    {ageData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip/><Legend/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h2 className="font-semibold mb-4">Engagement & Social Media Reach</h2>
-            <ul className="space-y-3">
-              <li className="flex justify-between"><span>Instagram Mentions</span><span className="font-bold text-blue-600">5,200</span></li>
-              <li className="flex justify-between"><span>Facebook Shares</span><span className="font-bold text-green-600">3,800</span></li>
-              <li className="flex justify-between"><span>Twitter Tweets</span><span className="font-bold text-sky-600">1,200</span></li>
-              <li className="flex justify-between"><span>Event Check-ins</span><span className="font-bold text-purple-600">9,500</span></li>
-            </ul>
-          </div>
-        </div>
+            {/* Gender */}
+            <div className="rounded-2xl shadow bg-white p-4">
+              <h3 className="mb-2 font-semibold">Gender</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie data={genderData} dataKey="value" nameKey="name" outerRadius={90}>
+                    {genderData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip/><Legend/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
 
-        {/* Row 2 */}
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h2 className="font-semibold mb-4">Attendee Interests</h2>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={interestData} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3}>
-                  {interestData.map((_, i) => <Cell key={i} fill={COLORS[i%COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow col-span-2">
-            <h2 className="font-semibold mb-4">Attendee Locations</h2>
-            <div className="grid grid-cols-2 gap-6">
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={locationData}>
+            {/* Top Interests */}
+            <div className="rounded-2xl shadow bg-white p-4">
+              <h3 className="mb-2 font-semibold">Top Interests</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={interestsData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" /><YAxis /><Tooltip />
-                  <Bar dataKey="value" fill="#6366F1" />
+                  <XAxis dataKey="name" /><YAxis allowDecimals={false}/><Tooltip/>
+                  <Bar dataKey="value" />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
 
-              <table className="w-full text-left border">
-                <thead><tr className="bg-gray-100"><th className="p-2 border">Location</th><th className="p-2 border">Count</th></tr></thead>
-                <tbody>{locationData.map((loc,i)=>(
-                  <tr key={i}><td className="p-2 border">{loc.name}</td><td className="p-2 border">{loc.value}</td></tr>
-                ))}</tbody>
-              </table>
+            {/* Locations */}
+            <div className="rounded-2xl shadow bg-white p-4">
+              <h3 className="mb-2 font-semibold">Locations</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={locationData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" /><YAxis allowDecimals={false}/><Tooltip/>
+                  <Bar dataKey="value" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

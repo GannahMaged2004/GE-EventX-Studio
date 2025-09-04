@@ -1,4 +1,5 @@
 // model for user
+// For the frontend to connect with the backend, we need to create a model for the user.
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 

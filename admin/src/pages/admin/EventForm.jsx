@@ -1,156 +1,152 @@
-"use client";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Sidebar from "../../components/Sidebar";
+import { createEvent, updateEvent, getEvent } from "../../api/api";
+import concertImage from "../../../public/concert.jpg";
+import theatreImage from "../../../public/theatre.jpg";
+import footballImage from "../../../public/sports.jpg"
+const BASE = import.meta.env.BASE_URL || "/";
+
+const CATEGORY_IMAGE = {
+  concert:  concertImage,
+  theatre:  theatreImage,
+  football: footballImage,
+};
 
 
-import  Sidebar  from "../../components/Sidebar";
+export default function EventForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    title: "", description: "", date: "", venue: "",
+    price: "", capacity: "",
+    tags: "", popularity: "medium",
+    category: "concert",
+    imageUrl: CATEGORY_IMAGE["concert"],
+  });
 
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        const e = await getEvent(id);
+        setForm({
+          title: e.title || "",
+          description: e.description || "",
+          date: e.date ? new Date(e.date).toISOString().slice(0, 16) : "",
+          venue: e.venue || "",
+          price: e.price ?? "",
+          capacity: e.capacity ?? "",
+          tags: (e.tags || []).join(", "),
+          popularity: e.popularity || "medium",
+          category: e.category || "concert",
+          imageUrl: e.imageUrl || CATEGORY_IMAGE[e.category || "concert"],
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load event");
+      }
+    })();
+  }, [id]);
 
-export default function EventDetailsPage() {
+  const onChange = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
+
+  const onCategoryChange = (e) => {
+    const value = e.target.value;
+    setForm((s) => ({
+      ...s,
+      category: value,
+      imageUrl: CATEGORY_IMAGE[value] || s.imageUrl,
+    }));
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        date: form.date ? new Date(form.date).toISOString() : null,
+        venue: form.venue.trim(),
+        price: Number(form.price),
+        capacity: Number(form.capacity),
+        availableSeats: Number(form.capacity),
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        popularity: form.popularity,
+        category: form.category,
+        imageUrl: form.imageUrl, // auto-filled from category (can be edited)
+      };
+      if (id) await updateEvent(id, payload); else await createEvent(payload);
+      navigate("/admin/manage-events");
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
+    <div className="flex">
       <Sidebar />
+      <main className="flex-1 p-6 bg-white rounded-xl shadow">
+        <h1 className="text-2xl font-bold mb-6">{id ? "Edit Event" : "Add New Event"}</h1>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          {/* Title */}
-          <h2 className="text-xl font-bold text-gray-800 mb-6">
-            Event Details
-          </h2>
-
-          {/* Event Form */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm text-gray-600">Event Name</label>
-              <input
-                type="text"
-                defaultValue="Colombo Music Festival 2025"
-                className="w-full mt-1 rounded-lg border border-gray-300 p-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600">Event Date</label>
-              <input
-                type="date"
-                defaultValue="2025-04-12"
-                className="w-full mt-1 rounded-lg border border-gray-300 p-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600">Event Venue</label>
-              <input
-                type="text"
-                defaultValue="Viharamahadevi Open Air Theater, Colombo"
-                className="w-full mt-1 rounded-lg border border-gray-300 p-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600">Event Time</label>
-              <input
-                type="text"
-                defaultValue="6.00PM – 10.30PM"
-                className="w-full mt-1 rounded-lg border border-gray-300 p-2"
-              />
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="mb-6">
-            <label className="block text-sm text-gray-600">
-              Event Description
-            </label>
-            <textarea
-              rows={4}
-              defaultValue="Get ready for Sri Lanka’s biggest music festival – the Colombo Music Festival 2025! 🎶✨ ..."
-              className="w-full mt-1 rounded-lg border border-gray-300 p-2"
+        {/* Preview */}
+        <div className="mb-4">
+          <div className="text-sm text-gray-600 mb-2">Image Preview</div>
+          <div className="rounded-xl overflow-hidden border w-full max-w-xl">
+            <img
+              src={form.imageUrl}
+              alt={form.category}
+              className="w-full h-56 object-cover"
+              onError={(e)=> { e.currentTarget.src = CATEGORY_IMAGE[form.category]; }}
             />
           </div>
-
-          {/* Event Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-3 rounded-lg border text-center">
-              <p className="text-sm text-gray-600">Ticket Price</p>
-              <p className="font-bold text-gray-800">2500 LKR</p>
-            </div>
-            <div className="p-3 rounded-lg border text-center">
-              <p className="text-sm text-gray-600">Seat Amount</p>
-              <p className="font-bold text-gray-800">1200</p>
-            </div>
-            <div className="p-3 rounded-lg border text-center">
-              <p className="text-sm text-gray-600">Available Seats</p>
-              <p className="font-bold text-gray-800">523</p>
-            </div>
-            <div className="p-3 rounded-lg border text-center">
-              <p className="text-sm text-gray-600">Popularity</p>
-              <p className="font-bold text-gray-800">High</p>
-            </div>
-          </div>
-
-          {/* Seat Allocation */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-800 mb-3">Seat Allocation</h3>
-            <div className="grid grid-cols-20 gap-1 w-full bg-gray-50 p-4 rounded-lg">
-              {Array.from({ length: 100 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-5 h-5 rounded-sm ${
-                    i % 3 === 0
-                      ? "bg-purple-500"
-                      : i % 5 === 0
-                      ? "bg-gray-400"
-                      : "bg-white border"
-                  }`}
-                />
-              ))}
-            </div>
-            <div className="flex gap-4 mt-3 text-sm">
-              <div className="flex items-center gap-1">
-                <span className="w-4 h-4 bg-purple-500 rounded-sm"></span> Paid
-                Seats
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="w-4 h-4 bg-gray-400 rounded-sm"></span>{" "}
-                Reserved
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="w-4 h-4 border bg-white rounded-sm"></span>{" "}
-                Available
-              </div>
-            </div>
-          </div>
-
-          {/* Tags + QR */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="col-span-2">
-              <label className="block text-sm text-gray-600">Tags</label>
-              <input
-                type="text"
-                defaultValue="#Music, #Festival"
-                className="w-full mt-1 rounded-lg border border-gray-300 p-2"
-              />
-              <p className="text-sm text-gray-600 mt-2">
-                Expected Attendance: <span className="font-bold">+1000</span>
-              </p>
-            </div>
-            <div className="flex flex-col items-center justify-center border rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Scan QR code for easy payments
-              </p>
-              <div className="w-24 h-24 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-
-          {/* Footer Buttons */}
-          <div className="flex justify-end gap-4">
-            <button className="px-6 py-2 rounded-lg border border-gray-400 text-gray-700">
-              Edit
-            </button>
-            <button className="px-6 py-2 rounded-lg bg-indigo-600 text-white">
-              Attendee Insights
-            </button>
-          </div>
         </div>
-      </div>
+
+        <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 max-w-2xl">
+          <input name="title" value={form.title} onChange={onChange} placeholder="Title" className="p-3 rounded-xl border" required />
+          <textarea name="description" value={form.description} onChange={onChange} placeholder="Description" className="p-3 rounded-xl border" rows={4} required />
+          <input type="datetime-local" name="date" value={form.date} onChange={onChange} className="p-3 rounded-xl border" required />
+          <input name="venue" value={form.venue} onChange={onChange} placeholder="Venue" className="p-3 rounded-xl border" />
+
+          {/* NEW: Category + auto-image */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Category</label>
+              <select name="category" value={form.category} onChange={onCategoryChange} className="p-3 rounded-xl border">
+                <option value="concert">Concert</option>
+                <option value="theatre">Theatre</option>
+                <option value="football">Football</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Image URL (auto-filled, editable)</label>
+              <input name="imageUrl" value={form.imageUrl} onChange={onChange} placeholder="https://..." className="p-3 rounded-xl border" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <input type="number" min="0" step="0.01" name="price" value={form.price} onChange={onChange} placeholder="Price" className="p-3 rounded-xl border" required />
+            <input type="number" min="1" name="capacity" value={form.capacity} onChange={onChange} placeholder="Capacity" className="p-3 rounded-xl border" required />
+          </div>
+
+          <input name="tags" value={form.tags} onChange={onChange} placeholder="Tags (comma separated)" className="p-3 rounded-xl border" />
+          <select name="popularity" value={form.popularity} onChange={onChange} className="p-3 rounded-xl border">
+            <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+          </select>
+
+          <div className="flex gap-3 pt-2">
+            <button disabled={saving} className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+              {saving ? "Saving…" : id ? "Update Event" : "Create Event"}
+            </button>
+            <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-xl border">Cancel</button>
+          </div>
+        </form>
+      </main>
     </div>
   );
 }

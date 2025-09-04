@@ -1,3 +1,4 @@
+// Event Routes
 import express from 'express';
 import { createEvent, getEvents, getEventById, updateEvent, deleteEvent } from '../controllers/eventController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';

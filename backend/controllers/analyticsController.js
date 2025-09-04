@@ -1,3 +1,4 @@
+// This file contains the functions for getting user analytics and exporting it to Excel or CSV.
 import User from '../models/User.js';
 import Event from '../models/Event.js';
 import Booking from '../models/Booking.js';
@@ -6,6 +7,7 @@ import {Parser} from 'json2csv';
 
 
 // Get user analytics: total revenue, tickets sold, attendees (unique users)
+
 export const getOverview = async (req, res) => {
     try {
     const revenueAgg = await Booking.aggregate([
@@ -28,10 +30,10 @@ export const getOverview = async (req, res) => {
     }
 };
 
-// Export user analytics to Excel or CSV
+// Get user demographics: age distribution, gender distribution, interests distribution, location distribution
 export const getDemographics= async (req, res) => {
     try {
-      // Group users by age ranges, gender, interests, location.
+
       
       const users = await User.find();
 
@@ -83,7 +85,6 @@ export const exportReportCSV = async (req, res) => {
     }   
 };
 
-// Export user analytics to Excel or CSV
 export const exportReportExcel = async (req, res) => {
     try{
         const bookings = await Booking.find().populate('user event').lean();

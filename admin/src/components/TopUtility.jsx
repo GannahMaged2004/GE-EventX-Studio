@@ -1,3 +1,4 @@
+// The Top part of the dashboard.
 import { Button, Dropdown, TextInput } from "flowbite-react";
 import { FiFilter, FiSearch, FiCalendar } from "react-icons/fi";
 
@@ -8,7 +9,7 @@ const Dot = ({ color }) => (
 export default function TopUtility() {
   return (
     <div className="space-y-4">
-      {/* Title + Action buttons */}
+  
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Event Management Section</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -34,7 +35,6 @@ export default function TopUtility() {
         </div>
       </div>
 
-      {/* Legend */}
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Dot color="#3B82F6" /> Up-Coming Events

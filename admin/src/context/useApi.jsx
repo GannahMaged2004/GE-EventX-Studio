@@ -1,4 +1,4 @@
-// useApi.jsx
+// This file contains the code for the useApi hook, which is used to interact with the backend API.
 import axios from "axios";
 import { useAuth } from "./useAuth";
 

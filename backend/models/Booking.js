@@ -1,4 +1,7 @@
 // Model for Booking
+// This model is used to store booking details of users for events.
+// The frontend can use this model to display the bookings made by users.
+// The backend can use this model to create, update, and delete bookings.
 import mongoose from'mongoose';
 
 const BookingSchema = new mongoose.Schema({

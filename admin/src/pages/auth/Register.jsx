@@ -1,9 +1,13 @@
+// The register page for the EventXStudio app.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { register as apiRegister } from "../../api/api";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
+
+// This function is used to render the register page
+// It uses the useAuth and apiRegister functions from the context and api files respectively
 export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -28,13 +32,15 @@ export default function Register() {
     };
 
     try {
-      const { data } = await apiRegister(payload);
-      login(data);
-      navigate(data.role === "admin" ? "/admin/dashboard" : "/user/browse");
+        const res = await apiRegister(payload);
+      login(res);
+      navigate(res.role === "admin" ? "/admin/dashboard" : "/user/browse");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }
   };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center">

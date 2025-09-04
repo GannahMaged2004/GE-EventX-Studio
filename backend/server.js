@@ -1,3 +1,13 @@
+// This is where the server starts and listens for incoming requests.
+// It imports the necessary modules and sets up the server.
+// It also imports the routes for authentication, events, bookings, and analytics.
+// It also sets up error handling middleware.
+// It also connects to the database and starts listening for incoming requests.
+// It also exports the app object for testing purposes.
+// To make it work, you need to have a .env file in the root directory with the necessary environment variables.
+// You also need to have a MongoDB instance running on your machine.
+// You also need to have Node.js and npm installed on your machine.
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";

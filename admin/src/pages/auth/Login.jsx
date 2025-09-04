@@ -1,3 +1,4 @@
+// Login Page
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
@@ -5,6 +6,8 @@ import { login as apiLogin } from "../../api/api";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../../index.css";
 
+// This function is used to render the login page
+// It uses the useAuth and apiLogin functions from the context and api files respectively
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -12,19 +15,32 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // This function is used to handle the change in the form
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      const { data } = await apiLogin(form);
-      login(data);
-      navigate(data.role === "admin" ? "/admin/dashboard" : "/user/browse");
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
-    }
-  };
+// The handleSubmit function is used to handle the form submission
+// It first clears any previous errors, then tries to login using the apiLogin function
+// If successful, it saves the user and token in the AuthProvider and redirects to the appropriate page
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  // clear previous errors
+  try {
+const res = await apiLogin(form);   
+login(res);                         
+navigate(res.role === "admin" ? "/admin/dashboard" : "/user/browse");
+
+  } catch (err) {
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Login failed";
+    setError(msg);
+  }
+};
+
+
+// This is the login page
 
   return (
     <div className="flex min-h-screen items-center justify-center">

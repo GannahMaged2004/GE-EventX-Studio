@@ -1,3 +1,7 @@
+// This file is used to connect to the MongoDB database.
+
+
+
 import mongoose from "mongoose";
 const connectDB = async () => {
     try{

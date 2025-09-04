@@ -1,53 +1,94 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
-import { getEvents, createEvent, deleteEvent } from "../../api/api";
+import { getEvents, deleteEvent } from "../../api/api";
+import { Spinner } from "flowbite-react";
 
 export default function ManageEvents() {
   const [events, setEvents] = useState([]);
-  const [form, setForm] = useState({ title:"", description:"", date:"", venue:"", price:0, capacity:100, popularity:"high", tags:[] });
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const load = async () => {
-    const { data } = await getEvents();
-    setEvents(data);
+    try {
+      setLoading(true);
+      const data = await getEvents();
+      setEvents(data);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to load events");
+    } finally {
+      setLoading(false);
+    }
   };
+
   useEffect(() => { load(); }, []);
 
-  const create = async () => {
-    await createEvent(form);
-    setForm({ title:"", description:"", date:"", venue:"", price:0, capacity:100, popularity:"high", tags:[] });
-    load();
+  const onDelete = async (id) => {
+    if (!confirm("Delete this event?")) return;
+    try {
+      await deleteEvent(id);
+      setEvents((list) => list.filter((e) => e._id !== id));
+    } catch (e) {
+      console.error(e);
+      alert("Delete failed");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex gap-5 p-6">
+    <div className="flex">
       <Sidebar />
-      <main className="space-y-6 flex-1">
-        <div className="bg-white rounded-xl p-4 shadow">
-          <h2 className="font-semibold mb-3">Create Event</h2>
-          <div className="grid md:grid-cols-3 gap-3">
-            <input className="border rounded px-3 py-2" placeholder="Title" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/>
-            <input className="border rounded px-3 py-2" placeholder="Venue" value={form.venue} onChange={e=>setForm({...form,venue:e.target.value})}/>
-            <input className="border rounded px-3 py-2" type="datetime-local" onChange={e=>setForm({...form,date:e.target.value})}/>
-            <input className="border rounded px-3 py-2" type="number" placeholder="Price" onChange={e=>setForm({...form,price:+e.target.value})}/>
-            <input className="border rounded px-3 py-2" type="number" placeholder="Capacity" onChange={e=>setForm({...form,capacity:+e.target.value})}/>
-          </div>
-          <textarea className="border rounded px-3 py-2 w-full mt-3" placeholder="Description" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/>
-          <button className="btn gradient-btn text-white px-4 py-2 rounded mt-3" onClick={create}>Save</button>
+      <main className="flex-1 p-6 bg-white rounded-xl shadow">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-indigo-700">Manage Events</h1>
+          <button
+            onClick={() => navigate("/admin/event-form")}
+            className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            + Add Event
+          </button>
         </div>
 
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {events.map(ev => (
-            <div key={ev._id} className="p-4 bg-white rounded-xl shadow">
-              <div className="font-semibold">{ev.title}</div>
-              <div className="text-sm text-gray-500">{new Date(ev.date).toLocaleString()}</div>
-              <div className="text-sm">{ev.venue}</div>
-              <div className="mt-2 flex gap-2">
-                <button className="px-3 py-1 rounded border">Edit</button>
-                <button className="px-3 py-1 rounded border text-red-600" onClick={()=>deleteEvent(ev._id).then(load)}>Delete</button>
+        {loading ? (
+          <div>Loading… 
+            <Spinner aria-label="Default status example"/>;
+          </div>
+        ) : events.length === 0 ? (
+          <div className="text-red-500">No events yet.</div>
+        ) : (
+          <div className="grid gap-4">
+            {events.map((e) => (
+              <div key={e._id} className="rounded-2xl border p-4 flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-lg">{e.title}</div>
+                  <div className="text-sm text-gray-600">
+                    {e.venue || "—"} • {e.date ? new Date(e.date).toLocaleString() : "No date"}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Price: {e.price} • Capacity: {e.capacity} • Available: {e.availableSeats}
+                  </div>
+                  {Array.isArray(e.tags) && e.tags.length > 0 && (
+                    <div className="mt-1 text-xs text-gray-500">Tags: {e.tags.join(", ")}</div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3 py-2 rounded-xl border bg-blue-500 text-white"
+                    onClick={() => navigate(`/admin/event-form/${e._id}`)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="px-3 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700"
+                    onClick={() => onDelete(e._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

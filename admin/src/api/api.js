@@ -1,37 +1,102 @@
+// creating an API client.
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: "http://localhost:5000/api",
-});
+// environment variables
+const raw = (import.meta.env?.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+const API_BASE = raw.endsWith("/api") ? raw : `${raw}/api`;
 
-// Add token automatically
+const API = axios.create({ baseURL: API_BASE });
+
+// Here we are using interceptors to add token to the headers of each request
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) {
+  let token = localStorage.getItem("token");
+  if (typeof token === "string") token = token.trim().replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
+  if (token && token !== "undefined" && token !== "null") {
     req.headers.Authorization = `Bearer ${token}`;
+  } else {
+    delete req.headers.Authorization;
   }
   return req;
 });
 
-// Auth endpoints
-export const login = (data) => API.post("/auth/login", data);
-export const register = (data) => API.post("/auth/register", data);
-export const getProfile = () => API.get("/auth/profile");
 
-// Event endpoints
-export const getEvents = (params) => API.get("/events", { params });
-export const getEvent = (id) => API.get(`/events/${id}`);
-export const createEvent = (data) => API.post("/events", data);
-export const updateEvent = (id, data) => API.put(`/events/${id}`, data);
-export const deleteEvent = (id) => API.delete(`/events/${id}`);
+// Here we are defining a helper function to convert errors to a standard format.
+const asError = (err, fallback) => {
+  const msg =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    fallback;
+  const e = new Error(msg);
+  e.status = err?.response?.status;
+  e.data = err?.response?.data;
+  return e;
+};
 
-// Booking endpoints
-export const createBooking = (eventId, data) => API.post(`/bookings/${eventId}`, data);
-export const getMyBookings = () => API.get("/bookings/my");
-export const getAllBookings = () => API.get("/bookings");
+// ===== AUTH =====
+export async function login(payload) {
+  try {
+    const { data } = await API.post("/auth/login", payload);
+    return data;
+  } catch (e) { throw asError(e, "Login failed"); }
+}
 
-// Analytics endpoints
-export const getOverview = () => API.get("/analytics/overview");
-export const getDemographics = () => API.get("/analytics/demographics");
-export const exportCSV = () => API.get("/analytics/export/csv");
-export const exportExcel = () => API.get("/analytics/export/excel");
+export async function register(payload) {
+  try {
+    const { data } = await API.post("/auth/register", payload);
+    return data;
+  } catch (e) { throw asError(e, "Registration failed"); }
+}
+
+export async function getProfile() {
+  try {
+    const { data } = await API.get("/auth/profile");
+    return data;
+  } catch (e) { throw asError(e, "Failed to fetch profile"); }
+}
+
+// ===== EVENTS =====
+export async function getEvents(params = {}) {
+  try { const { data } = await API.get("/events", { params }); return data; }
+  catch (e) { throw asError(e, "Failed to fetch events"); }
+}
+
+export async function getEvent(id) {
+  try { const { data } = await API.get(`/events/${id}`); return data; }
+  catch (e) { throw asError(e, "Failed to fetch event"); }
+}
+
+export async function createEvent(payload) {
+  try { const { data } = await API.post("/events", payload); return data; }
+  catch (e) { throw asError(e, "Failed to create event"); }
+}
+
+export async function updateEvent(id, payload) {
+  try { const { data } = await API.put(`/events/${id}`, payload); return data; }
+  catch (e) { throw asError(e, "Failed to update event"); }
+}
+
+export async function deleteEvent(id) {
+  try { const { data } = await API.delete(`/events/${id}`); return data; }
+  catch (e) { throw asError(e, "Failed to delete event"); }
+}
+
+// ===== BOOKINGS =====
+export const getAllBookings = (params = {}) =>
+  API.get("/bookings", { params }).then(r => r.data);
+
+export const getUserBookings = () =>
+  API.get("/bookings/my").then(r => r.data);
+
+export const createBooking = (eventId, { seatNum }) =>
+  API.post(`/bookings/${eventId}`, { seatNum }).then(r => r.data);
+
+// ===== ANALYTICS & EXPORTS =====
+export const getOverview = () => API.get("/analytics/overview").then(r => r.data);
+export const getDemographics = () => API.get("/analytics/demographics").then(r => r.data);
+
+export const exportReportCSV = async () =>
+  (await API.get("/analytics/export/csv", { responseType: "blob" })).data;
+
+export const exportReportExcel = async () =>
+  (await API.get("/analytics/export/excel", { responseType: "blob" })).data;
