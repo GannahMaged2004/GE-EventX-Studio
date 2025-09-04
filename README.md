@@ -1,29 +1,43 @@
-This is Gannah Eltonsy's Maim Final Project 
-basically it's a full ticket booking project where the user can book tickets to any event 
-and the admin handles the tickets and the event 
+🎟️ EventXStudio – Ticket Booking System
 
+A full-stack ticket booking application where users can browse and book event tickets and admins can manage events and tickets.
 
-The installments required were 
+This project was developed as a Final Main Project by Gannah Eltonsy.
 
-Frontend 
-React: npm create vite@latest
-project name () React Java Script Variant
-cd (frontend folder)
+🚀 Features
+👤 User
 
-Tailwind:
-npm install tailwindcss @tailwindcss/vite
-npx tailwindcss init 
+Browse events with details (date, location, tickets available).
 
+Book and download event tickets (with QR code).
 
-Flowbite: 
-npm install tailwindcss postcss autoprefixer
-npm install flowbite-react flowbite
-npm install react-icons
+Manage bookings through a personal dashboard.
 
+🛠️ Admin
 
-Backend:
-npm init -y
-npm install express mongoose cors dotenv
-npm install nodemon --save-dev
-npm install qrcode
-npm install bcryptjs jsonwebtoken
+Create, update, and delete events.
+
+Manage ticket sales and bookings.
+
+Dashboard with event analytics and ticket stats.
+
+🖥️ Tech Stack
+Frontend
+
+React (Vite) – Fast, modern frontend framework.
+
+Tailwind CSS – Utility-first styling.
+
+Flowbite + React Icons – UI components and icons.
+
+Backend
+
+Node.js + Express – Server and API handling.
+
+MongoDB (Mongoose) – Database for events, users, and bookings.
+
+JWT Authentication – Secure login system.
+
+Bcrypt.js – Password encryption.
+
+QRCode – Generates unique QR codes for tickets.
