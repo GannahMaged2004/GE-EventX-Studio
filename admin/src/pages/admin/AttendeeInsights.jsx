@@ -40,60 +40,77 @@ export default function AttendeeInsights() {
     .slice(0, 10);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 p-6 space-y-6">
-        <h1 className="text-2xl font-bold">Attendee Insights</h1>
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
+      {/* Sidebar stacks on mobile */}
+      <div className="md:w-64 w-full">
+        <Sidebar />
+      </div>
 
-        {loading ? <div><div>Loading… 
-            <Spinner aria-label="Default status example"/>;
-          </div></div> : err ? <div className="text-red-600">{err}</div> : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        <h1 className="text-xl sm:text-2xl font-bold">Attendee Insights</h1>
+
+        {loading ? (
+          <div className="flex items-center gap-2">
+            <Spinner aria-label="Default status example" />
+            <span>Loading…</span>
+          </div>
+        ) : err ? (
+          <div className="text-red-600">{err}</div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Age Distribution */}
-            <div className="rounded-2xl shadow bg-white p-4">
-              <h3 className="mb-2 font-semibold">Age Distribution</h3>
+            <div className="rounded-2xl shadow bg-white p-4 sm:p-6">
+              <h3 className="mb-2 font-semibold text-base sm:text-lg">Age Distribution</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie data={ageData} dataKey="value" nameKey="name" outerRadius={90}>
-                    {ageData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    {ageData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
                   </Pie>
-                  <Tooltip/><Legend/>
+                  <Tooltip /><Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
 
             {/* Gender */}
-            <div className="rounded-2xl shadow bg-white p-4">
-              <h3 className="mb-2 font-semibold">Gender</h3>
+            <div className="rounded-2xl shadow bg-white p-4 sm:p-6">
+              <h3 className="mb-2 font-semibold text-base sm:text-lg">Gender</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie data={genderData} dataKey="value" nameKey="name" outerRadius={90}>
-                    {genderData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    {genderData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
                   </Pie>
-                  <Tooltip/><Legend/>
+                  <Tooltip /><Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
 
             {/* Top Interests */}
-            <div className="rounded-2xl shadow bg-white p-4">
-              <h3 className="mb-2 font-semibold">Top Interests</h3>
+            <div className="rounded-2xl shadow bg-white p-4 sm:p-6">
+              <h3 className="mb-2 font-semibold text-base sm:text-lg">Top Interests</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={interestsData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" /><YAxis allowDecimals={false}/><Tooltip/>
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
                   <Bar dataKey="value" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             {/* Locations */}
-            <div className="rounded-2xl shadow bg-white p-4">
-              <h3 className="mb-2 font-semibold">Locations</h3>
+            <div className="rounded-2xl shadow bg-white p-4 sm:p-6">
+              <h3 className="mb-2 font-semibold text-base sm:text-lg">Locations</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={locationData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" /><YAxis allowDecimals={false}/><Tooltip/>
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
                   <Bar dataKey="value" />
                 </BarChart>
               </ResponsiveContainer>

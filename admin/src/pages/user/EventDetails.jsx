@@ -1,208 +1,320 @@
-// EventDetails
+// Event Details
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getEvent, createBooking } from "../../api/api";
-import { useAuth } from "../../context/useAuth";
-import { Spinner } from "flowbite-react";
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
+import { Spinner } from "flowbite-react"; // Spinner was already working for you
+import { getEvent, createBooking, getEventAvailability } from "../../api/api";
 
+const SEATS_PER_ROW = 10;
 
-// Payment Modal i didn't really do much here cuz you don't need it in this project cuz you won't actually book
-function PaymentModal({ open, amount, onClose, onSuccess }) {
-  const [name, setName] = useState("");
-  const [card, setCard] = useState("");
-  const [exp, setExp] = useState("");   // MM/YY
-  const [cvv, setCvv] = useState("");
+// Build labels A1..A10, B1.. etc based on capacity
+function buildSeatLabels(capacity) {
+  const labels = [];
+  for (let i = 0; i < capacity; i++) {
+    const rowLetter = String.fromCharCode(65 + Math.floor(i / SEATS_PER_ROW));
+    const col = (i % SEATS_PER_ROW) + 1;
+    labels.push(`${rowLetter}${col}`);
+  }
+  return labels;
+}
+
+// Payment modal no actual payment 
+function PaymentModal({ open, onClose, amount, eventTitle, onSuccess }) {
+  const [form, setForm] = useState({ name: "", card: "", exp: "", cvc: "" });
   const [processing, setProcessing] = useState(false);
-  const valid = name.trim() && /^\d{16}$/.test(card.replace(/\s+/g,'')) && /^\d{2}\/\d{2}$/.test(exp) && /^\d{3,4}$/.test(cvv);
+  const [error, setError] = useState("");
+
+  if (!open) return null;
 
   const pay = async () => {
-    if (!valid) return;
+    setError("");
+    const { name, card, exp, cvc } = form;
+    if (
+      !name ||
+      card.replace(/\s/g, "").length < 12 ||
+      !/^\d{2}\/\d{2}$/.test(exp) ||
+      cvc.replace(/\D/g, "").length < 3
+    ) {
+      setError("Please enter valid payment details.");
+      return;
+    }
+    setProcessing(true);
     try {
-      setProcessing(true);
-      // simulate payment delay
-      await new Promise(r => setTimeout(r, 900));
-      onSuccess?.(); // let parent proceed with booking
+      await new Promise((r) => setTimeout(r, 1200)); 
+      onSuccess({ id: "PMT_" + Date.now() });
+    } catch {
+      setError("Payment failed. Try again.");
     } finally {
       setProcessing(false);
     }
   };
-
-  // this function is used to render the payment modal
-  // it uses the useAuth and api functions from the context and api files respectively
-  if (!open) return null;
-  // Render
+// Payment modal render
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 grid place-items-center p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">Payment</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">&times;</button>
-        </div>
-        <div className="text-sm text-gray-600 mb-4">Total due: <b>{amount ?? "-"}</b></div>
-        <div className="space-y-3">
-          <input className="w-full border rounded-xl p-3" placeholder="Name on card" value={name} onChange={e=>setName(e.target.value)} />
-          <input className="w-full border rounded-xl p-3" placeholder="Card number (16 digits)" value={card} onChange={e=>setCard(e.target.value)} maxLength={19}/>
-          <div className="grid grid-cols-2 gap-3">
-            <input className="w-full border rounded-xl p-3" placeholder="MM/YY" value={exp} onChange={e=>setExp(e.target.value)} maxLength={5}/>
-            <input className="w-full border rounded-xl p-3" placeholder="CVV" value={cvv} onChange={e=>setCvv(e.target.value)} maxLength={4}/>
+    <div className="fixed inset-0 z-50">
+     
+      <div className="absolute inset-0 bg-black/40" onClick={processing ? undefined : onClose} />
+     
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+          <div className="px-5 py-4 border-b">
+            <h3 className="text-lg font-semibold">Checkout</h3>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-sm text-gray-600">
+              You’re paying <b>{amount}</b> for <b>{eventTitle}</b>.
+            </p>
+
+            <div>
+              <label className="block text-sm text-gray-700">Name on card</label>
+              <input
+                className="mt-1 w-full rounded-lg border px-3 py-2"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-700">Card number</label>
+              <input
+                className="mt-1 w-full rounded-lg border px-3 py-2"
+                placeholder="4242 4242 4242 4242"
+                inputMode="numeric"
+                value={form.card}
+                onChange={(e) => setForm({ ...form, card: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-700">Expiry (MM/YY)</label>
+                <input
+                  className="mt-1 w-full rounded-lg border px-3 py-2"
+                  placeholder="12/27"
+                  value={form.exp}
+                  onChange={(e) => setForm({ ...form, exp: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700">CVC</label>
+                <input
+                  className="mt-1 w-full rounded-lg border px-3 py-2"
+                  placeholder="123"
+                  inputMode="numeric"
+                  value={form.cvc}
+                  onChange={(e) => setForm({ ...form, cvc: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+          </div>
+          <div className="px-5 py-4 border-t flex items-center justify-end gap-2">
+            <button
+              className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50"
+              onClick={onClose}
+              disabled={processing}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-xl bg-indigo-600 text-white disabled:opacity-50"
+              onClick={pay}
+              disabled={processing}
+            >
+              {processing ? "Processing…" : `Pay ${amount}`}
+            </button>
           </div>
         </div>
-        <div className="mt-4 flex gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl border">Cancel</button>
-          <button
-            onClick={pay}
-            disabled={!valid || processing}
-            className="px-4 py-2 rounded-xl bg-indigo-600 text-white disabled:opacity-50"
-          >
-            {processing ? "Processing…" : "Pay & Confirm"}
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-gray-400">Demo checkout — no real charge.</p>
       </div>
     </div>
   );
 }
 
-// EventDetails
-// This is the main component that renders the event details and allows the user to book a seat
-// It uses the useAuth and api functions from the context and api files respectively
-// It also uses the PaymentModal component to simulate a payment modal
+// Event Details function does the following:
+// - Loads event and availability data
+// - Builds seat labels based on capacity
+// - Renders seat buttons with appropriate classes based on availability and selected state
+// - Renders payment modal with payment form and success/error handling
 export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [event, setEvent] = useState(null);
-  const [seatNum, setSeatNum] = useState("");
+  const [availability, setAvailability] = useState({
+    capacity: 0,
+    availableSeats: 0,
+    taken: [],
+  });
+  const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-  const [payOpen, setPayOpen] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const e = await getEvent(id);
-        setEvent(e);
-      } catch (e) {
-        console.error(e);
-        setErr(e.message || "Failed to load event");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
+  // payment modal toggle
+  const [payOpen, setPayOpen] = useState(false);
 
   const isPast = useMemo(() => {
     if (!event?.date) return false;
     return new Date(event.date).getTime() < Date.now();
   }, [event]);
 
-  const soldOut = (event?.availableSeats ?? 0) <= 0;
-
-  // precheck function to check if user is authenticated, event is not past, and seat is not empty
-  const precheck = () => {
-    if (!user) {
-      navigate("/auth/login");
-      return false;
-    }
-    if (isPast) {
-      alert("This event has already occurred.");
-      return false;
-    }
-    if (soldOut) {
-      alert("This event is sold out.");
-      return false;
-    }
-    if (!seatNum.trim()) {
-      alert("Please enter a seat identifier (e.g., A12)");
-      return false;
-    }
-    return true;
-  };
-
-  // onBookClick function to handle the booking process
-  const onBookClick = () => {
-    if (!precheck()) return;
-    setPayOpen(true); 
-  };
-
-  const doBooking = async () => {
+  const load = async () => {
     try {
-      await createBooking(id, { seatNum: seatNum.trim() });
-      setPayOpen(false);
+      setLoading(true);
+      const [e, a] = await Promise.all([getEvent(id), getEventAvailability(id)]);
+      setEvent(e);
+      setAvailability(
+        a || {
+          capacity: e?.capacity ?? 0,
+          availableSeats: e?.availableSeats ?? 0,
+          taken: [],
+        }
+      );
+    } catch (e) {
+      setErr(e.message || "Failed to load event");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [id]);
+
+  const seats = useMemo(
+    () => buildSeatLabels(availability.capacity || event?.capacity || 0),
+    [availability.capacity, event]
+  );
+  const takenSet = useMemo(() => new Set(availability.taken || []), [availability.taken]);
+
+  const soldOut = (availability.availableSeats ?? 0) <= 0;
+
+  const onSelect = (label) => {
+    if (takenSet.has(label) || isPast || soldOut) return;
+    setSelected((prev) => (prev === label ? "" : label));
+  };
+
+  const startCheckout = () => {
+    if (isPast) return alert("This event date has passed.");
+    if (soldOut) return alert("No available seats.");
+    if (!selected) return alert("Please select a seat.");
+    setPayOpen(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    setPayOpen(false);
+    try {
+      await createBooking(id, { seatNum: selected });
       navigate("/user/tickets");
     } catch (e) {
-      console.error(e);
       alert(e?.response?.data?.message || e.message || "Booking failed");
-      setPayOpen(false);
+      load(); 
     }
   };
 
-
-  if (loading) return <div className="p-6"><div>Loading… 
-            <Spinner aria-label="Default status example"/>;
-          </div></div>;
+  if (loading)
+    return (
+      <div className="p-6 grid place-items-center min-h-[50vh]">
+        <div className="flex items-center gap-3 text-gray-700">
+          <Spinner aria-label="Loading event" />
+          <span>Loading…</span>
+        </div>
+      </div>
+    );
   if (err) return <div className="p-6 text-red-600">Error: {err}</div>;
   if (!event) return <div className="p-6">Event not found.</div>;
 
-  // render 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-4 bg-white rounded-xl shadow">
-      <div className=" overflow-hidden">
-        <Navbar />
-      </div>
-      {event.imageUrl && (
-        <div className="rounded-xl overflow-hidden">
-          <img src={event.imageUrl} alt={event.title} className="w-full h-64 object-cover" />
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="bg-white rounded-2xl shadow p-5">
+        <h1 className="text-2xl font-bold">{event.title}</h1>
+        <p className="mt-1 text-gray-600">{event.description}</p>
+        <div className="mt-2 text-sm text-gray-500">
+          {event.venue || "—"} • {event.date ? new Date(event.date).toLocaleString() : "No date"}
         </div>
-      )}
-
-      <h1 className="text-2xl font-bold">{event.title}</h1>
-
-      {(isPast || soldOut) && (
-        <div className={`rounded-xl p-3 text-sm ${isPast ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}>
-          {isPast ? "This event has already occurred." : "Sold out — no seats available."}
+        <div className="mt-1 text-sm text-gray-600">
+          Price: {event.price} • Capacity: {event.capacity} • Available:{" "}
+          {availability.availableSeats ?? event.availableSeats}
         </div>
-      )}
-
-      <div className="text-gray-600">{event.description}</div>
-      <div className="text-sm text-gray-500">
-        {event.venue || "—"} • {event.date ? new Date(event.date).toLocaleString() : "No date"}
+        {(isPast || soldOut) && (
+          <div
+            className={`mt-3 inline-block rounded-lg px-3 py-1 text-sm ${
+              isPast ? "bg-red-50 text-red-700" : "bg-yellow-50 text-yellow-700"
+            }`}
+          >
+            {isPast ? "Event date has passed" : "Sold out"}
+          </div>
+        )}
       </div>
-      <div className="text-sm text-gray-600">
-        Price: {event.price} • Capacity: {event.capacity} • Available: {event.availableSeats}
-        {event.category ? ` • Category: ${event.category}` : ""}
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-2">
-        <input
-          value={seatNum}
-          onChange={(e) => setSeatNum(e.target.value)}
-          placeholder="Seat (e.g., A12)"
-          className="p-3 rounded-xl border"
-          disabled={isPast || soldOut}
-        />
-        <button
-          onClick={onBookClick}
-          disabled={isPast || soldOut}
-          className="px-4 py-2 rounded-xl bg-indigo-600 text-white disabled:opacity-50"
-        >
-          Book
-        </button>
+      <div className="mt-6 bg-white rounded-2xl shadow p-4">
+        <h2 className="font-semibold mb-3">Choose your seat</h2>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="inline-flex items-center gap-2">
+            <span className="h-4 w-4 rounded border bg-white inline-block" /> Available
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="h-4 w-4 rounded bg-gray-300 inline-block" /> Taken
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="h-4 w-4 rounded bg-indigo-600 inline-block" /> Selected
+          </span>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <div className="inline-block">
+            <div
+              className="grid"
+              style={{
+                gridTemplateColumns: `repeat(${SEATS_PER_ROW}, minmax(40px, 1fr))`,
+                gap: "8px",
+              }}
+            >
+              {seats.map((label) => {
+                const taken = takenSet.has(label);
+                const selectedCls = selected === label ? "bg-indigo-600 text-white" : "";
+                const baseCls = taken
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-white hover:bg-indigo-50 cursor-pointer";
+                return (
+                  <button
+                    key={label}
+                    disabled={taken || isPast || soldOut}
+                    onClick={() => onSelect(label)}
+                    className={`h-10 rounded-lg border text-sm font-medium ${selectedCls || baseCls}`}
+                    title={taken ? `${label} (taken)` : label}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            disabled={!selected || isPast || soldOut}
+            onClick={startCheckout}
+            className="px-4 py-2 rounded-xl bg-indigo-600 text-white disabled:opacity-50"
+          >
+            {selected ? `Checkout for ${selected}` : "Select a seat"}
+          </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50"
+          >
+            Back
+          </button>
+        </div>
       </div>
 
       <PaymentModal
         open={payOpen}
-        amount={event.price}
         onClose={() => setPayOpen(false)}
-        onSuccess={doBooking}
+        amount={String(event.price)}
+        eventTitle={event.title}
+        onSuccess={handlePaymentSuccess}
       />
-      <div className="bg-gray-900 rounded">
-        <Footer />
-      </div>
     </div>
   );
 }

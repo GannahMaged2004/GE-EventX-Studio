@@ -7,7 +7,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from "recharts";
 
-
 const COLORS = ["#8b5cf6","#7c3aed","#c084fc","#10b981","#f59e0b","#ef4444"];
 
 export default function Dashboard() {
@@ -36,31 +35,40 @@ export default function Dashboard() {
   const locationData = Object.entries(demo.locations).map(([name,value])=>({name,value}));
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 p-8 space-y-8">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
+      {/* Sidebar collapses into top on mobile */}
+      <div className="md:w-64 w-full">
+        <Sidebar />
+      </div>
 
-        {loading ?  <div>Loading… 
-            <Spinner aria-label="Default status example"/>;
-          </div>: (
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+
+        {loading ? (
+          <div className="flex items-center gap-2">
+            <Spinner aria-label="Default status example"/> 
+            <span>Loading…</span>
+          </div>
+        ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[
                 {label:"Revenue", value:kpi.totalRevenue},
                 {label:"Tickets Sold", value:kpi.ticketsSold},
                 {label:"Attendees", value:kpi.attendees},
               ].map((c,i)=>(
-                <div key={i} className="rounded-2xl shadow bg-white p-4">
-                  <div className="text-gray-500">{c.label}</div>
-                  <div className="text-3xl font-bold">{c.value ?? "-"}</div>
+                <div key={i} className="rounded-2xl shadow bg-white p-4 sm:p-6 text-center sm:text-left">
+                  <div className="text-gray-500 text-sm sm:text-base">{c.label}</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{c.value ?? "-"}</div>
                 </div>
               ))}
             </div>
 
+            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="rounded-2xl shadow bg-white p-4">
-                <h3 className="mb-2 font-semibold">Age Distribution</h3>
+              <div className="rounded-2xl shadow bg-white p-4 sm:p-6">
+                <h3 className="mb-3 font-semibold text-base sm:text-lg">Age Distribution</h3>
                 <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
                     <Pie data={ageData} dataKey="value" nameKey="name" outerRadius={90}>
@@ -71,12 +79,14 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="rounded-2xl shadow bg-white p-4">
-                <h3 className="mb-2 font-semibold">Locations</h3>
+              <div className="rounded-2xl shadow bg-white p-4 sm:p-6">
+                <h3 className="mb-3 font-semibold text-base sm:text-lg">Locations</h3>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={locationData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name"/><YAxis/><Tooltip/>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
                     <Bar dataKey="value" />
                   </BarChart>
                 </ResponsiveContainer>

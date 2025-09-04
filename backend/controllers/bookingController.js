@@ -3,6 +3,25 @@ import Booking from '../models/Booking.js';
 import Event from '../models/Event.js';
 import QRCode from 'qrcode';
 
+//  availability for one event (capacity, availableSeats, taken list)
+export const getEventAvailability = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const event = await Event.findById(eventId).lean();
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    const booked = await Booking.find({ event: eventId }, 'seatNum').lean();
+    const taken = booked.map(b => b.seatNum);
+
+    res.json({
+      capacity: event.capacity,
+      availableSeats: event.availableSeats,
+      taken
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 // Create a new booking
 export const createBooking = async (req, res) => {
   try {

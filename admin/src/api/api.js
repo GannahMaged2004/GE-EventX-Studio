@@ -91,6 +91,10 @@ export const getUserBookings = () =>
 export const createBooking = (eventId, { seatNum }) =>
   API.post(`/bookings/${eventId}`, { seatNum }).then(r => r.data);
 
+export const getEventAvailability = (eventId) =>
+  API.get(`/bookings/availability/${eventId}`).then(r => r.data);
+
+
 // ===== ANALYTICS & EXPORTS =====
 export const getOverview = () => API.get("/analytics/overview").then(r => r.data);
 export const getDemographics = () => API.get("/analytics/demographics").then(r => r.data);
